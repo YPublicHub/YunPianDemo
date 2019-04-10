@@ -1,0 +1,90 @@
+<html>
+
+<head>
+    <!--依赖-->
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.js"></script>
+    <script src="https://www.yunpian.com/static/official/js/libs/riddler-sdk-0.2.1.2.js"></script>
+    <script>
+        function back_auth(cid, token, auth){
+            $.ajax({
+            async: false,
+            type: "POST",
+            url:"/back",
+            contentType: "application/x-www-form-urlencoded; charset=utf-8",
+            dataType: "json",
+            data: 'captchaId={0}&token={1}&authenticate={2}'.replace('{0}', cid).replace('{1}', token).replace('{2}', auth),
+            success: function (data) {
+                if (data['code'] == 0){
+                    alert('验证成功')
+                }
+              },
+            error: function () {
+            }
+        })
+        }
+
+        window.onload = function () {
+            // 初始化
+            new YpRiddler({
+                expired: 10,
+                mode: 'dialog',
+                winWidth: '500',
+                lang: 'zh',
+                langPack: {},
+                container: document.getElementById('cbox'),
+                appId: '{{ cid }}',
+                version: 'v1',
+                onError: function (param) {
+                    if (param.code == 429) {
+                        alert('请求过于频繁，请稍后再试！')
+                        return
+                    }
+                    // 异常回调
+                    console.error('验证服务异常')
+                },
+                onSuccess: function (validInfo, close) {
+                    // 成功回调
+                    // alert(`验证通过!token=${validInfo.token}, authenticate=${validInfo.authenticate}`)
+                    back_auth('{{ cid }}', validInfo.token, validInfo.authenticate)
+                    close()
+                },
+                onFail: function (code, msg, retry) {
+                    // 失败回调
+                    alert('出错啦：' + msg + ' code: ' + code)
+                    retry()
+                },
+                beforeStart: function (next) {
+                    console.log('验证马上开始')
+                    next()
+                },
+                onExit: function () {
+                    // 退出验证 （仅限dialog模式有效）
+                    console.log('退出验证')
+                }
+            })
+        }
+    </script>
+</head>
+
+<body>
+    <form action="/reg" method="post" target="__blank">
+    账号:<br>
+    <input type="text" name="un">
+    <br>
+    密码:<br>
+    <input type="text" name="pwd">
+    <br><br>
+    手机号:<br>
+    <input type="text" name="phone">
+    <input type="submit" value="发送验证码" formaction="/send">
+    <br><br>
+    验证码:<br>
+    <input type="text" name="yzm">
+    <br><br>
+    <div id="cbox"></div>
+    <br><br>
+    <input type="submit" value="注册">
+    </form>
+</body>
+
+</html>
